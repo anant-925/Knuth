@@ -56,4 +56,30 @@ function isAdmin(req,res,next) //middleware to check if currently logged in user
        })
 }
 
-module.exports = {isLoggedIn,isCoordinator,redirectIfLoggedIn,updateLastActivity,isAdmin}
+function isCoordinatorOrAdmin(req, res, next) { //middleware to check if currently logged in user is a coordinator or admin
+  if (req.user) {
+    const email = req.user.emails[0].value;
+    readDB("Main", "Coordinators", { "list.gmail": email }).then((coordinators) => {
+      if (coordinators.length > 0) {
+        return next();
+      }
+      // If not coordinator, check if admin
+      readDB("Main", "Admins", { "email": email }).then((admins) => {
+        if (admins.length > 0) {
+          return next();
+        }
+        return res.status(403).send("you are not coordinator or admin");
+      }).catch((err) => {
+        console.log("Cant' Read Admins DB", err);
+        return res.status(500).send("Cant' Read DB");
+      });
+    }).catch((err) => {
+      console.log("Cant' Read Coordinators DB", err);
+      return res.status(500).send("Cant' Read DB");
+    });
+  } else {
+    return res.status(400).json("User Doesn't Exist");
+  }
+}
+
+module.exports = {isLoggedIn,isCoordinator,redirectIfLoggedIn,updateLastActivity,isAdmin,isCoordinatorOrAdmin}

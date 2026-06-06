@@ -13,6 +13,7 @@ require("./PageRoutes/AnnouncementRoutes.js")(app);                //requiring t
 require("./PageRoutes/HomeRoutes.js")(app);                        //requiring the HomeRoutes.js file (for the home page routes)
 require("./PageRoutes/connectWithUsRoutes.js")(app)                //requiring the connectWithUsRoutes.js file (for the connectWithUs page routes)
 require("./PageRoutes/AdminRoutes.js")(app);                       //requiring the AdminRoutes.js file (for the admin page routes)
+require("./PageRoutes/LeaderboardUploadRoutes.js")(app);           //requiring the LeaderboardUploadRoutes.js file (for leaderboard file upload)
 require("./PageRoutes/EventRoutes.js")(app);                       //requiring the EventRoutes.js file (for the event page routes)
 require("./PageRoutes/FeedbackRoutes.js")(app);                    //requiring the FeedbackRoutes.js file (for the feedback page routes)
 require("./PageRoutes/PODRoutes.js")(app);                         //requiring the POD.js file (for the POD page routes)

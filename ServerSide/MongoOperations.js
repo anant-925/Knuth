@@ -1,19 +1,52 @@
 const { MongoClient, ServerApiVersion } = require('mongodb'); //including the mongoDB package
 
-let mongoURI = 'mongodb+srv://'+(process.env.DBUsername)+':'+(process.env.DBPassword)+'@'+(process.env.ClusterAddress)+'/'; //URI for the MongoDB database
-
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
-const client = new MongoClient(mongoURI, {
-    serverApi: {
-        version: ServerApiVersion.v1,
-        strict: true,
-        deprecationErrors: true, //generate errors when deprecated MongoDB features are used
+function buildMongoURI() {
+    if (process.env.MONGO_URI && process.env.MONGO_URI.trim()) {
+        return process.env.MONGO_URI.trim();
     }
-});
+
+    const username = process.env.DBUsername;
+    const password = process.env.DBPassword;
+    const clusterAddress = process.env.ClusterAddress;
+
+    if (!username || !password || !clusterAddress) {
+        return null;
+    }
+
+    return `mongodb+srv://${username}:${password}@${clusterAddress}/`;
+}
+
+const mongoURI = buildMongoURI();
+let client = null;
+
+function getClient() {
+    if (!mongoURI) {
+        throw new Error(
+            'MongoDB is not configured. Set MONGO_URI or DBUsername, DBPassword, and ClusterAddress before starting the server.'
+        );
+    }
+
+    if (!client) {
+        client = new MongoClient(mongoURI, {
+            serverApi: {
+                version: ServerApiVersion.v1,
+                strict: true,
+                deprecationErrors: true, //generate errors when deprecated MongoDB features are used
+            }
+        });
+    }
+
+    return client;
+}
 
 async function connectDB() {
     try {
-        await client.connect();
+        if (!mongoURI) {
+            console.warn('MongoDB connection skipped because the connection string is missing.');
+            return;
+        }
+
+        await getClient().connect();
         console.log("Connected to the database");
     } catch (error) {
         console.error("Error:", error);
@@ -24,7 +57,7 @@ async function connectDB() {
 
 async function writeDB(Database, Collection, Data) { //Create Entry
     try {
-        const db = client.db(Database);
+        const db = getClient().db(Database);
         const collection = db.collection(Collection);
         
         const result = await collection.insertOne(Data);
@@ -38,7 +71,7 @@ async function writeDB(Database, Collection, Data) { //Create Entry
 
 async function readDB(Database, Collection, Query) { //Read Entry
     try {
-        const db = client.db(Database);
+        const db = getClient().db(Database);
         const collection = db.collection(Collection);
 
         const result = await collection.find(Query).toArray();
@@ -52,7 +85,7 @@ async function readDB(Database, Collection, Query) { //Read Entry
 
 async function readwithSortDB(Database, Collection, FindQuery, SortQuerry) { //Read Entry
     try {
-        const db = client.db(Database);
+        const db = getClient().db(Database);
         const collection = db.collection(Collection);
 
         const result = await collection.find(FindQuery).sort(SortQuerry).toArray();
@@ -66,7 +99,7 @@ async function readwithSortDB(Database, Collection, FindQuery, SortQuerry) { //R
 
 async function updateDB(Database, Collection, FindQuery, UpdateQuery) { //Update Entry
     try {
-        const db = client.db(Database);
+        const db = getClient().db(Database);
         const collection = db.collection(Collection);
 
         const result = await collection.updateOne(FindQuery,UpdateQuery);
@@ -80,7 +113,7 @@ async function updateDB(Database, Collection, FindQuery, UpdateQuery) { //Update
 
 async function deleteDB(Database, Collection, Query) { //Delete Entry
     try {
-        const db = client.db(Database);
+        const db = getClient().db(Database);
         const collection = db.collection(Collection);
 
         const result = await collection.deleteMany(Query);
@@ -94,7 +127,7 @@ async function deleteDB(Database, Collection, Query) { //Delete Entry
 
 async function countDocuments(Database, Collection, Query) { //Count Entries
     try {
-        const db = client.db(Database);
+        const db = getClient().db(Database);
         const collection = db.collection(Collection);
 
         const result = await collection.countDocuments(Query);
@@ -109,7 +142,7 @@ async function countDocuments(Database, Collection, Query) { //Count Entries
 
 async function SkipRead(Database, Collection, Query, sortQuery, Skip, Limit) { //Read Entry
     try {
-        const db = client.db(Database);
+        const db = getClient().db(Database);
         const collection = db.collection(Collection);
 
         const result = await collection.find(Query).sort(sortQuery).skip(Skip).limit(Limit).toArray();
