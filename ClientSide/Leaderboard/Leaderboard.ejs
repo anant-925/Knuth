@@ -43,7 +43,7 @@
                                     <% contests.forEach(c => { %>
                                         <li class="list-group-item d-flex justify-content-between align-items-center py-1">
                                             <small><%= c.contestName %> (<%= c.entriesCount %>)</small>
-                                            <button class="btn btn-danger btn-xs py-0 px-2" onclick="deleteContest('<%= c.contestName %>')">Remove</button>
+                                            <button class="btn btn-danger btn-xs py-0 px-2 remove-contest-btn" data-contest-name="<%= c.contestName %>">Remove</button>
                                         </li>
                                     <% }); %>
                                 </ul>
@@ -124,6 +124,14 @@
                 nav.querySelector(".next").addEventListener("click", () => { if (page < total) { page++; update(); } });
                 update();
             });
+
+            // Remove contest event handler to avoid inline JS execution
+            document.querySelectorAll(".remove-contest-btn").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const name = btn.getAttribute("data-contest-name");
+                    deleteContest(name);
+                });
+            });
         });
 
         const uploadForm = document.getElementById("uploadForm");
@@ -134,7 +142,26 @@
                 const jsonText = document.getElementById("leaderboardJSON").value.trim();
                 const msg = document.getElementById("uploadMsg");
                 try {
+                    // Size limit check (5MB to match server-side limit)
+                    if (jsonText.length > 5 * 1024 * 1024) {
+                        throw new Error("File size exceeds the 5MB limit.");
+                    }
+
                     const parsed = JSON.parse(jsonText);
+
+                    // Client-side schema validation
+                    const raw = parsed.models || parsed.leaderboard || (Array.isArray(parsed) ? parsed : null);
+                    if (!raw || !Array.isArray(raw)) {
+                        throw new Error("Pasted JSON must be a leaderboard array or contain a 'models'/'leaderboard' array property.");
+                    }
+                    if (raw.length === 0) {
+                        throw new Error("Leaderboard data cannot be empty.");
+                    }
+                    const isValid = raw.every(e => e && typeof e === 'object' && (e.username || e.hacker || e.name));
+                    if (!isValid) {
+                        throw new Error("Every entry in the leaderboard must have a 'username', 'hacker', or 'name' field.");
+                    }
+
                     const res = await fetch("/api/upload-leaderboard", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
