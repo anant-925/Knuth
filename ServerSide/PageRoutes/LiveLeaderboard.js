@@ -61,32 +61,19 @@ module.exports = (app) => {
             }));
 
             const existing = await readDB("Main", "Leaderboards", { contestName });
-            let combined = [];
             if (existing.length > 0) {
-                const map = new Map();
-                (existing[0].leaderboard || []).forEach(e => {
-                    if (e.username) map.set(e.username.toLowerCase().trim(), e);
-                });
-                mapped.forEach(e => {
-                    if (e.username) map.set(e.username.toLowerCase().trim(), e);
-                });
-                combined = Array.from(map.values());
-            } else {
-                combined = mapped;
+                return res.json({ success: false, error: "Contest already exists" });
             }
-            combined.sort((a, b) => {
+
+            mapped.sort((a, b) => {
                 if (a.rank !== b.rank) return a.rank - b.rank;
                 if (b.score !== a.score) return b.score - a.score;
                 return a.time_taken - b.time_taken;
             });
 
-            if (existing.length > 0) {
-                await updateDB("Main", "Leaderboards", { contestName }, { $set: { leaderboard: combined, lastSyncedAt: new Date(), uploadMethod: "json_paste" } });
-            } else {
-                await writeDB("Main", "Leaderboards", { contestName, leaderboard: combined, lastSyncedAt: new Date(), uploadMethod: "json_paste" });
-            }
+            await writeDB("Main", "Leaderboards", { contestName, leaderboard: mapped, lastSyncedAt: new Date(), uploadMethod: "json_paste" });
 
-            res.json({ success: true, message: `Stored ${combined.length} entries for ${contestName}` });
+            res.json({ success: true, message: `Stored ${mapped.length} entries for ${contestName}` });
         } catch (err) {
             res.json({ success: false, error: err.message });
         }

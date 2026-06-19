@@ -13,26 +13,15 @@ function isCoordinator(req,res,next) { //middleware to check if currently logged
       readDB("Main", "Coordinators", {"list.gmail": req.user.emails[0].value}).then((coordinators) => { //querrying DB to check if the email of the logged in user is present in the coordinators list
               if(coordinators.length > 0)
                   next();
-              else {
-                  if (req.path && req.path.startsWith("/api/")) {
-                      return res.status(403).json({ success: false, error: "you are not coordinator" });
-                  }
+              else
                   return res.send("you are not coordinator");
-              }
           }).catch((err) => {
               console.log("Cant' Read DB");
-              if (req.path && req.path.startsWith("/api/")) {
-                  return res.status(500).json({ success: false, error: "Cant' Read DB" });
-              }
               return res.send("Cant' Read DB");
           })
   }
-  else {
-      if (req.path && req.path.startsWith("/api/")) {
-          return res.status(400).json({ success: false, error: "User Doesn't Exist" });
-      }
-      res.status(400).json("User Doesn't Exist"); //not a coordinator
-  }
+  else
+    res.status(400).json("User Doesn't Exist"); //not a coordinator
 }
 
 function redirectIfLoggedIn(req, res, next) { //Middleware to check if user is logged in
