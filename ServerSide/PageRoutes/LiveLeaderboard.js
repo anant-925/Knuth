@@ -72,6 +72,7 @@ module.exports = (app) => {
             });
 
             await writeDB("Main", "Leaderboards", { contestName, leaderboard: mapped, lastSyncedAt: new Date(), uploadMethod: "json_paste" });
+            updateLog(req, "Uploaded leaderboard for contest " + contestName);
 
             res.json({ success: true, message: `Stored ${mapped.length} entries for ${contestName}` });
         } catch (err) {
@@ -91,6 +92,7 @@ module.exports = (app) => {
 
         try {
             await deleteDB("Main", "Leaderboards", { contestName });
+            updateLog(req, "Deleted contest " + contestName);
             res.json({ success: true, message: `Deleted ${contestName}` });
         } catch (err) {
             res.json({ success: false, error: err.message });
