@@ -211,4 +211,36 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     });
+
+    // 6. Export Registrants to Excel (CSV)
+    document.querySelectorAll(".export-csv-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const card = btn.closest(".form-card");
+            if (!card) return;
+            const table = card.querySelector("table");
+            if (!table) return;
+
+            const formTitle = btn.getAttribute("data-form-title") || "registrations";
+            const rows = Array.from(table.querySelectorAll("tr"));
+            
+            const csvContent = rows.map(row => {
+                const cells = Array.from(row.querySelectorAll("th, td"));
+                return cells.map(cell => {
+                    let text = cell.innerText.trim();
+                    text = text.replace(/"/g, '""');
+                    return `"${text}"`;
+                }).join(",");
+            }).join("\n");
+
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `registrations_${formTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+    });
 });
