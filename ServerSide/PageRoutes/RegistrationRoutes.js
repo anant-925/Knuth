@@ -35,7 +35,7 @@ module.exports = (app) => {
     });
 
     // API to create a new registration form (Coordinator only)
-    app.post("/api/create-registration-form", isLoggedIn, isCoordinator, async (req, res) => {
+    app.post("/api/create-registration-form", isLoggedIn, isCoordinator, updateLastActivity, async (req, res) => {
         const titleRaw = req.body?.title;
         const descriptionRaw = req.body?.description;
         const deadlineRaw = req.body?.deadline;
@@ -83,7 +83,7 @@ module.exports = (app) => {
     });
 
     // API to delete a registration form (Coordinator only)
-    app.post("/api/delete-registration-form", isLoggedIn, isCoordinator, async (req, res) => {
+    app.post("/api/delete-registration-form", isLoggedIn, isCoordinator, updateLastActivity, async (req, res) => {
         const formIdRaw = req.body?.formId;
         if (typeof formIdRaw !== "string") {
             return res.status(400).json({ success: false, error: "formId must be a string." });
@@ -110,7 +110,7 @@ module.exports = (app) => {
     });
 
     // API to register a user for an event (Logged-in users only)
-    app.post("/api/register-event", isLoggedIn, async (req, res) => {
+    app.post("/api/register-event", isLoggedIn, updateLastActivity, async (req, res) => {
         // Debounce spam toggle attempts by rate-limiting calls from the same session
         const now = Date.now();
         if (req.session.lastRegAction && (now - req.session.lastRegAction < 2000)) {
@@ -166,7 +166,7 @@ module.exports = (app) => {
     });
 
     // API to unregister a user from an event (Logged-in users only)
-    app.post("/api/unregister-event", isLoggedIn, async (req, res) => {
+    app.post("/api/unregister-event", isLoggedIn, updateLastActivity, async (req, res) => {
         // Debounce spam toggle attempts by rate-limiting calls from the same session
         const now = Date.now();
         if (req.session.lastRegAction && (now - req.session.lastRegAction < 2000)) {
